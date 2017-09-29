@@ -44,7 +44,6 @@
             true,
             "check-function-in-method"
         ],
-        "no-null-keyword": true,
         "no-shadowed-variable": true,
         "no-string-literal": true,
         "no-switch-case-fall-through": true,
