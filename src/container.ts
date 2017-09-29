@@ -1,4 +1,5 @@
 import { WrappedService } from './wrappers/service';
+import { WrappedConstant } from './wrappers/constant';
 
 type Dependency = any;
 
@@ -7,6 +8,14 @@ export class IOCContainer {
 
   public registerService<T>(name: Symbol, service: Service<T>, options: DependencyOptions = { isSingleton: true }) {
     const wrappedDependency = new WrappedService(name, service, options, this);
+
+    this.dependencies.set(name, wrappedDependency);
+
+    return wrappedDependency;
+  }
+
+  public registerConstant<T>(name: Symbol, dependency: T) {
+    const wrappedDependency = new WrappedConstant<T>(name, dependency);
 
     this.dependencies.set(name, wrappedDependency);
 

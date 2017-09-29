@@ -1,6 +1,11 @@
 import { CircularDependencyError } from './../errors';
 import { IOCContainer } from './../container';
 
+// TODO: There surely must be a better way?
+const isClass = (func: Function) => {
+  return /^\s*class\s+/.test(func.toString());
+};
+
 export class WrappedService<T> implements WrappedDependency<T> {
   private name: string;
   private instance: T;
@@ -72,7 +77,11 @@ export class WrappedService<T> implements WrappedDependency<T> {
 
     let newInstance;
     try {
-      newInstance = new this.instantiator(...this.getDependencies());
+      if (isClass(this.instantiator)) {
+        newInstance = new (this.instantiator as any)(...this.getDependencies());
+      } else {
+        newInstance = (this.instantiator as any)(...this.getDependencies());
+      }
     } catch (error) {
       if (error instanceof CircularDependencyError) {
         error.addDependencyToChain(this.name);

@@ -179,4 +179,106 @@ describe('Container', () => {
       });
     });
   });
+
+  describe('function service injection', () => {
+    it('should allow you to register a service as a function', () => {
+      const FUNC_SERVICE = Symbol('FuncService');
+
+      interface IService {
+        method1: () => string;
+      }
+
+      const funcService = () => {
+        return {
+          method1: () => 'Hello'
+        };
+      };
+      container.registerService<IService>(FUNC_SERVICE, funcService);
+
+      const service = container.get<IService>(FUNC_SERVICE);
+
+      assert.equal(service.method1(), 'Hello');
+    });
+
+    it('should allow you to inject a function-service into a class service, and vice versa', () => {
+      const HELLO_SERVICE = Symbol('HelloService');
+      const SPACE_SERVICE = Symbol('SpaceService');
+      const WORLD_SERVICE = Symbol('WorldService');
+
+      interface IHelloService {
+        hello: () => string;
+      }
+
+      interface IWorldService {
+        world: () => string;
+      }
+
+      const helloService = () => {
+        return {
+          hello: () => 'Hello'
+        };
+      };
+
+      class SpaceService {
+        constructor(private funcService1: IHelloService) {}
+
+        public space = () => this.funcService1.hello() + ', ';
+      }
+
+      const worldService = (spaceService: SpaceService) => {
+        return {
+          world: () => spaceService.space() + 'World!'
+        };
+      };
+
+      container.registerService<IHelloService>(HELLO_SERVICE, helloService);
+      container.registerService<SpaceService>(SPACE_SERVICE, SpaceService).addDependencies(HELLO_SERVICE);
+      container.registerService<IWorldService>(WORLD_SERVICE, worldService).addDependencies(SPACE_SERVICE);
+
+      const service = container.get<IWorldService>(WORLD_SERVICE);
+
+      assert.equal(service.world(), 'Hello, World!');
+    });
+  });
+
+  describe('constant injection', () => {
+    const CONSTANT_1 = Symbol('Constant1');
+    const CONSTANT_2 = Symbol('Constant2');
+    const CONSTANT_3 = Symbol('Constant3');
+
+    beforeEach(() => {
+      container.registerConstant<number>(CONSTANT_1, 5);
+      container.registerConstant<string>(CONSTANT_2, 'Hello');
+    });
+
+    it('should return the constant', () => {
+      const constant1 = container.get<number>(CONSTANT_1);
+      const constant2 = container.get<string>(CONSTANT_2);
+
+      assert.equal(constant1, 5);
+      assert.equal(constant2, 'Hello');
+    });
+
+    it('should throw error if constant isn\'t defined', () => {
+      assert.throws(() => {
+        container.get<number>(CONSTANT_3);
+      });
+    });
+
+    it('should inject constants into services', () => {
+      const SERVICE_1 = Symbol('Service1');
+
+      class Service1 {
+        constructor(private constant1: number, private constant2: string) {}
+
+        public combineConstants = () => `${this.constant2} ${this.constant1}`;
+      }
+
+      container.registerService<Service1>(SERVICE_1, Service1).addDependencies(CONSTANT_1, CONSTANT_2);
+
+      const service = container.get<Service1>(SERVICE_1);
+
+      assert.equal(service.combineConstants(), 'Hello 5');
+    });
+  });
 });
