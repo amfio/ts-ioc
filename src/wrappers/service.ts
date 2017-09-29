@@ -43,11 +43,8 @@ export class WrappedService<T> implements WrappedDependency<T> {
   }
 
   public addDependencies(...dependenciesNames: Array<Symbol>) {
-    if (dependenciesNames.length !== this.instantiator.length) {
-      throw new Error(`Error adding depencencies to ${this.name}. ${dependenciesNames.length} dependencies specified when only ${this.instantiator.length} required`);
-    }
-
     this.dependencies = dependenciesNames;
+    this.ensureCorrectNumberOfDependencies();
   }
 
   public addDependency(dependencyName: Symbol, paramIndex: number) {
@@ -64,14 +61,28 @@ export class WrappedService<T> implements WrappedDependency<T> {
     return this;
   }
 
-  private hasCorrectNumberOfDependencies() {
-    return this.dependencies.length !== this.instantiator.length;
+  private locateIndexOfMissingDependency(): number {
+    if (this.dependencies.length !== this.instantiator.length) {
+      return this.dependencies.length;
+    }
+
+    for (let i = 0; i < this.dependencies.length; i++) {
+      if (!this.dependencies[i]) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private ensureCorrectNumberOfDependencies() {
+    const indexOfMissingDependency = this.locateIndexOfMissingDependency();
+    if (indexOfMissingDependency !== -1) {
+      throw new Error(`Error adding depencencies to ${this.name}. Dependency missing at index ${indexOfMissingDependency}. ${this.instantiator.length} required`);
+    }
   }
 
   private createInstance() {
-    if (this.hasCorrectNumberOfDependencies()) {
-      throw new Error(`Tried to create instance of ${this.name} but it takes ${this.instantiator.length} arguments and only ${this.dependencies.length} dependecies are registered`);
-    }
+    this.ensureCorrectNumberOfDependencies();
 
     this.isBeingInstantiated = true;
 

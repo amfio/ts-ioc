@@ -31,6 +31,10 @@ export class IOCContainer {
 
     return wrappedDependency.getInstance();
   }
+
+  public clear() {
+    this.dependencies = new Map<Symbol, WrappedDependency<Dependency>>();
+  }
 }
 
 export const container = new IOCContainer();
