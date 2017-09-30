@@ -1,15 +1,30 @@
-import { WrappedService } from './wrappers/service';
-import { WrappedConstant } from './wrappers/constant';
-
-type Dependency = any;
+import { WrappedFactory } from './wrappers/wrapped-factory';
+import { WrappedConstant } from './wrappers/wrapped-constant';
 
 export class IOCContainer {
-  private dependencies = new Map<Symbol, WrappedDependency<Dependency>>();
+  private registeredDependencies = new Map<Symbol, WrappedDependency<Dependency>>();
+
+  public registerFactory<T>(name: Symbol, factory: Factory<T>, options: DependencyOptions = { isSingleton: true }) {
+    const wrappedDependency = new WrappedFactory(name, factory, options, this);
+
+    this.registeredDependencies.set(name, wrappedDependency);
+
+    return wrappedDependency;
+  }
 
   public registerService<T>(name: Symbol, service: Service<T>, options: DependencyOptions = { isSingleton: true }) {
-    const wrappedDependency = new WrappedService(name, service, options, this);
+    // convert the service into a factory
+    const factory = (...dependencies: Array<Dependency>) => {
+      return new service(...dependencies);
+    };
 
-    this.dependencies.set(name, wrappedDependency);
+    // So we can better handle errors by knowing how many dependencies the service
+    // should have
+    Object.defineProperty(factory, 'length', { value: service.length });
+
+    const wrappedDependency = new WrappedFactory(name, factory, options, this);
+
+    this.registeredDependencies.set(name, wrappedDependency);
 
     return wrappedDependency;
   }
@@ -17,13 +32,13 @@ export class IOCContainer {
   public registerConstant<T>(name: Symbol, dependency: T) {
     const wrappedDependency = new WrappedConstant<T>(name, dependency);
 
-    this.dependencies.set(name, wrappedDependency);
+    this.registeredDependencies.set(name, wrappedDependency);
 
     return wrappedDependency;
   }
 
   public get<T>(name: Symbol): T {
-    const wrappedDependency = this.dependencies.get(name);
+    const wrappedDependency = this.registeredDependencies.get(name);
 
     if (!wrappedDependency) {
       throw new Error(`Dependency ${name} has not been registered.`);
@@ -33,7 +48,7 @@ export class IOCContainer {
   }
 
   public clear() {
-    this.dependencies = new Map<Symbol, WrappedDependency<Dependency>>();
+    this.registeredDependencies = new Map<Symbol, WrappedDependency<Dependency>>();
   }
 }
 

@@ -1,12 +1,7 @@
 import { CircularDependencyError } from './../errors';
 import { IOCContainer } from './../container';
 
-// TODO: There surely must be a better way?
-const isClass = (func: Function) => {
-  return /^\s*class\s+/.test(func.toString());
-};
-
-export class WrappedService<T> implements WrappedDependency<T> {
+export class WrappedFactory<T> implements WrappedDependency<T> {
   private name: string;
   private instance: T;
   private isBeingInstantiated = false;
@@ -15,7 +10,7 @@ export class WrappedService<T> implements WrappedDependency<T> {
 
   constructor(
     symbol: Symbol,
-    private instantiator: Service<T>,
+    private factoryFunction: Factory<T>,
     private options: DependencyOptions,
     private container: IOCContainer
   ) {
@@ -49,11 +44,11 @@ export class WrappedService<T> implements WrappedDependency<T> {
 
   public addDependency(dependencyName: Symbol, paramIndex: number) {
     if (this.dependencies[(paramIndex)]) {
-      throw new Error(`Error adding dependency ${dependencyName} to ${this.name} at position ${paramIndex}. Dependency at that position exists already.`);
+      throw new Error(`Error adding dependency ${dependencyName.toString()} to ${this.name} at position ${paramIndex}. Dependency at that position exists already.`);
     }
 
-    if (paramIndex >= this.instantiator.length) {
-      throw new Error(`Error adding dependency ${dependencyName} to ${this.name} at position ${paramIndex}. Service only has ${this.instantiator.length} dependencies.`);
+    if (paramIndex >= this.factoryFunction.length) {
+      throw new Error(`Error adding dependency ${dependencyName.toString()} to ${this.name} at position ${paramIndex}. Service only has ${this.factoryFunction.length} dependencies.`);
     }
 
     this.dependencies[paramIndex] = dependencyName;
@@ -62,7 +57,7 @@ export class WrappedService<T> implements WrappedDependency<T> {
   }
 
   private locateIndexOfMissingDependency(): number {
-    if (this.dependencies.length !== this.instantiator.length) {
+    if (this.dependencies.length !== this.factoryFunction.length) {
       return this.dependencies.length;
     }
 
@@ -77,7 +72,7 @@ export class WrappedService<T> implements WrappedDependency<T> {
   private ensureCorrectNumberOfDependencies() {
     const indexOfMissingDependency = this.locateIndexOfMissingDependency();
     if (indexOfMissingDependency !== -1) {
-      throw new Error(`Error adding depencencies to ${this.name}. Dependency missing at index ${indexOfMissingDependency}. ${this.instantiator.length} required`);
+      throw new Error(`Error adding depencencies to ${this.name}. Dependency missing at index ${indexOfMissingDependency}. ${this.factoryFunction.length} required`);
     }
   }
 
@@ -88,11 +83,7 @@ export class WrappedService<T> implements WrappedDependency<T> {
 
     let newInstance;
     try {
-      if (isClass(this.instantiator)) {
-        newInstance = new (this.instantiator as any)(...this.getDependencies());
-      } else {
-        newInstance = (this.instantiator as any)(...this.getDependencies());
-      }
+      newInstance = this.factoryFunction(...this.getDependencies());
     } catch (error) {
       if (error instanceof CircularDependencyError) {
         error.addDependencyToChain(this.name);

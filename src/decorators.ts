@@ -2,27 +2,27 @@ import { container } from './container';
 
 // Implementing decorators is new to me. These are more of an experiment out of interest
 
-let currentTargetSymbol: Symbol;
-let currentTarget: Service;
+let currentServiceSymbol: Symbol;
+let currentService: Service<any>;
 let dependenciesWaitingToBeInjected: Array<Symbol>;
 resetInjections();
 
 function resetInjections() {
-  currentTargetSymbol = null;
-  currentTarget = null;
+  currentServiceSymbol = null;
+  currentService = null;
   dependenciesWaitingToBeInjected = new Array<Symbol>();
 }
 
 export function service(dependencyName: Symbol, dependencyOptions: DependencyOptions = { isSingleton: true }) {
-  return function(constructor: Service) {
+  return function(targettedService: Service<any>) {
 
-    if (currentTarget !== null && currentTarget !== constructor) {
+    if (currentService !== null && currentService !== targettedService) {
       resetInjections();
-      throw Error(`Injecting dependencies into ${currentTargetSymbol} but it is not decorated with @service`);
+      throw Error(`Injecting dependencies into ${currentServiceSymbol} but it is not decorated with @service`);
     }
 
     try {
-      container.registerService(dependencyName, constructor, dependencyOptions).addDependencies(...dependenciesWaitingToBeInjected);
+      container.registerService(dependencyName, targettedService, dependencyOptions).addDependencies(...dependenciesWaitingToBeInjected);
     } catch (e) {
       throw e;
     } finally {
@@ -32,13 +32,13 @@ export function service(dependencyName: Symbol, dependencyOptions: DependencyOpt
 }
 
 export function inject(dependencyName: Symbol) {
-  return function (target: Service, propertyKey: string | symbol, parameterIndex: number) {
-    if (currentTarget !== null && currentTarget !== target) {
+  return function (targettedService: Service<any>, propertyKey: string | symbol, parameterIndex: number) {
+    if (currentService !== null && currentService !== targettedService) {
       resetInjections();
-      throw Error(`Injecting occured on multiple different targets. Make sure you have decorated ${currentTargetSymbol} with @service`);
+      throw Error(`Injecting occured on multiple different targets. Make sure you have decorated ${currentServiceSymbol} with @service`);
     }
-    currentTargetSymbol = dependencyName;
-    currentTarget = target;
+    currentServiceSymbol = dependencyName;
+    currentService = targettedService;
     dependenciesWaitingToBeInjected[parameterIndex] = dependencyName;
   };
 }

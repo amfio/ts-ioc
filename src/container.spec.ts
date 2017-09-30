@@ -181,19 +181,19 @@ describe('Container', () => {
   });
 
   describe('function service injection', () => {
-    it('should allow you to register a service as a function', () => {
+    it('should allow you to register a factory', () => {
       const FUNC_SERVICE = Symbol('FuncService');
 
       interface IService {
         method1: () => string;
       }
 
-      const funcService = () => {
+      const factory = () => {
         return {
           method1: () => 'Hello'
         };
       };
-      container.registerService<IService>(FUNC_SERVICE, funcService);
+      container.registerFactory<IService>(FUNC_SERVICE, factory);
 
       const service = container.get<IService>(FUNC_SERVICE);
 
@@ -213,7 +213,7 @@ describe('Container', () => {
         world: () => string;
       }
 
-      const helloService = () => {
+      const helloServiceFactory = () => {
         return {
           hello: () => 'Hello'
         };
@@ -225,15 +225,15 @@ describe('Container', () => {
         public space = () => this.funcService1.hello() + ', ';
       }
 
-      const worldService = (spaceService: SpaceService) => {
+      const worldServiceFactory = (spaceService: SpaceService) => {
         return {
           world: () => spaceService.space() + 'World!'
         };
       };
 
-      container.registerService<IHelloService>(HELLO_SERVICE, helloService);
+      container.registerFactory<IHelloService>(HELLO_SERVICE, helloServiceFactory);
       container.registerService<SpaceService>(SPACE_SERVICE, SpaceService).addDependencies(HELLO_SERVICE);
-      container.registerService<IWorldService>(WORLD_SERVICE, worldService).addDependencies(SPACE_SERVICE);
+      container.registerFactory<IWorldService>(WORLD_SERVICE, worldServiceFactory).addDependencies(SPACE_SERVICE);
 
       const service = container.get<IWorldService>(WORLD_SERVICE);
 
