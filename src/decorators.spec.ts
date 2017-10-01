@@ -1,14 +1,32 @@
-import { service, inject } from './decorators';
-import { container } from './container';
+import {
+  createDecoratorsForContainer,
+  InjectDecorator,
+  ServiceDecorator,
+  inject as defaultInject,
+  service as defaultService
+} from './decorators';
+
+import {
+  IOCContainer,
+  container as defaultContainer
+} from './container';
+
 import { assert } from 'chai';
 
 describe('decorators', () => {
+  let container: IOCContainer;
+  let inject: InjectDecorator;
+  let service: ServiceDecorator;
+
   const SERVICE_1 = Symbol('Service 1');
   const SERVICE_2 = Symbol('Service 2');
   const SERVICE_3 = Symbol('Service 3');
 
   beforeEach(() => {
-    container.clear();
+    container = new IOCContainer();
+    const decorators = createDecoratorsForContainer(container);
+    inject = decorators.inject;
+    service = decorators.service;
   });
 
   describe('services', () => {
@@ -136,6 +154,85 @@ describe('decorators', () => {
 
       assert.throws(() => {
         container.get<Service3>(SERVICE_3);
+      });
+    });
+
+    describe('multiple containers', () => {
+      let container1: IOCContainer;
+      let inject1: InjectDecorator;
+      let service1: ServiceDecorator;
+      let container2: IOCContainer;
+      let inject2: InjectDecorator;
+      let service2: ServiceDecorator;
+
+      beforeEach(() => {
+        container1 = new IOCContainer();
+        const decorators1 = createDecoratorsForContainer(container1);
+        inject1 = decorators1.inject;
+        service1 = decorators1.service;
+
+        container2 = new IOCContainer();
+        const decorators2 = createDecoratorsForContainer(container2);
+        inject2 = decorators2.inject;
+        service2 = decorators2.service;
+      });
+
+      it('should allow you to register services to each container without them being accessible from the other container', () => {
+        const SERVICE_A = Symbol('ServiceA');
+        const SERVICE_B = Symbol('ServiceB');
+
+        @service1(SERVICE_A)
+        class ServiceA {
+          public getHello = () => 'Hello';
+        }
+
+        @service2(SERVICE_B)
+        class ServiceB {
+          public getHello = () => 'Hello';
+        }
+
+        const serviceA = container1.get<ServiceA>(SERVICE_A);
+        const serviceB = container2.get<ServiceB>(SERVICE_B);
+
+        // try get instance of the two services from their correct containers
+        assert.instanceOf(serviceA, ServiceA);
+        assert.instanceOf(serviceB, ServiceB);
+
+        // try get instance of the two services from the containers where they were NOT registered
+        assert.throws(() => {
+          container1.get<ServiceB>(SERVICE_B);
+        });
+        assert.throws(() => {
+          container2.get<ServiceA>(SERVICE_A);
+        });
+      });
+    });
+  });
+
+  describe('default container and injections', () => {
+    it('should inject other services into a decorated service', () => {
+      it('should inject other decorated services into decorated services', () => {
+        @defaultService(SERVICE_1)
+        class Service1 {
+          public getHello = () => 'Hello';
+        }
+
+        @defaultService(SERVICE_2)
+        class Service2 {
+          public getWorld = () => 'World';
+        }
+
+        @defaultService(SERVICE_3)
+        class Service3 {
+          constructor(@defaultInject(SERVICE_1) private s1: Service1, @defaultInject(SERVICE_2) private s2: Service2) {
+
+          }
+          public getHelloWorld = () => this.s1.getHello() + ' ' + this.s2.getWorld();
+        }
+
+        const serviceInstance = container.get<Service3>(SERVICE_3);
+
+        assert.equal(serviceInstance.getHelloWorld(), 'Hello World');
       });
     });
   });

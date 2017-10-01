@@ -178,6 +178,32 @@ describe('Container', () => {
         });
       });
     });
+
+    describe('overriding', () => {
+      it('should allow you override a service', () => {
+        const SERVICE_IDENTIFIER = Symbol('ServiceIdentifier');
+
+        interface IService {
+          stringify: () => string;
+        }
+
+        class ServiceA implements IService {
+          public stringify = () => 'service a';
+        }
+
+        class ServiceB implements IService {
+          public stringify = () => 'service b';
+        }
+
+        container.registerService<IService>(SERVICE_IDENTIFIER, ServiceA);
+        container.registerService<IService>(SERVICE_IDENTIFIER, ServiceB);
+
+        const service = container.get<IService>(SERVICE_IDENTIFIER);
+
+        assert.instanceOf(service, ServiceB);
+        assert.equal(service.stringify(), 'service b');
+      });
+    });
   });
 
   describe('function service injection', () => {
