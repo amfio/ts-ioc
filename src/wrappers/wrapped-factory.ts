@@ -23,7 +23,7 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
     // if we are already in the process of instanciating this dependency then we must
     // be in the middle of a circular dependency
     if (this.isBeingInstantiated) {
-      throw new CircularDependencyError(this.identifier.toString());
+      throw new CircularDependencyError(this.identifier);
     }
 
     const instance = this.createInstance();
@@ -41,7 +41,6 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
   }
 
   public addDependency(dependencyIdentifier: DependencyIdentifier, paramIndex: number) {
-    // TODO: Remove this? It would allow overriding of dependencies
     if (this.dependencies[(paramIndex)]) {
       throw new AddDependencyError(this.identifier, dependencyIdentifier, paramIndex, 'Dependency at that position already exists');
     }

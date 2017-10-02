@@ -9,7 +9,7 @@
       "experimentalDecorators": true
   },
   "include": [
-      "**/*.ts",
-      "../src/interfaces.d.ts"
+      "./**/*.ts",
+      "./../src/interfaces.d.ts"
   ]
 }

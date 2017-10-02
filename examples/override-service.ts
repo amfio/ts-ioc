@@ -1,9 +1,19 @@
 import { container } from './../src/container';
 import { service, inject } from './../src/decorators';
 
-class HelloService {
+interface IHelloService {
+  hello(): string;
+}
+
+class HelloService implements IHelloService {
   public hello() {
     return 'Hello';
+  }
+}
+
+class BonjourService implements IHelloService {
+  public hello() {
+    return 'Bonjour';
   }
 }
 
@@ -23,11 +33,12 @@ class HelloWorldService {
   }
 }
 
-container.registerService('HelloService', HelloService);
-
+// Register services/dependencies as usual
+container.registerService<IHelloService>('HelloService', HelloService);
 container.registerService('WorldService', WorldService);
-
 container.registerService('HelloWorldService', HelloWorldService).addDependencies('HelloService', 'WorldService');
+
+container.registerService<IHelloService>('HelloService', BonjourService);
 
 const helloWorldService = container.get<HelloWorldService>('HelloWorldService');
 console.log(helloWorldService.helloWorld());

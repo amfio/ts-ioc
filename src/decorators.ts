@@ -20,8 +20,9 @@ export function createDecoratorsForContainer(container: IOCContainer): { service
     return function(targettedService: Service<any>) {
 
       if (currentService !== null && currentService !== targettedService) {
+        const erroredServiceIdentifer = currentServiceIdentifier;
         resetInjections();
-        throw new ServiceNotDecoratedError(currentServiceIdentifier);
+        throw new ServiceNotDecoratedError(erroredServiceIdentifer);
       }
 
       try {
@@ -37,8 +38,9 @@ export function createDecoratorsForContainer(container: IOCContainer): { service
   function injectDecorator(dependencyIdentifier: DependencyIdentifier) {
     return function (targettedService: Service<any>, propertyKey: string | symbol, parameterIndex: number) {
       if (currentService !== null && currentService !== targettedService) {
+        const erroredServiceIdentifer = currentServiceIdentifier;
         resetInjections();
-        throw new ServiceNotDecoratedError(currentServiceIdentifier);
+        throw new ServiceNotDecoratedError(erroredServiceIdentifer);
       }
       currentServiceIdentifier = dependencyIdentifier;
       currentService = targettedService;

@@ -26,7 +26,7 @@ interface IWorldService {
 @service(WORLD_SERVICE)
 class WorldService implements IWorldService {
   public world() {
-    return 'World!';
+    return 'Decorator World!';
   }
 }
 

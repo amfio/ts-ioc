@@ -14,7 +14,7 @@ export class CircularDependencyError extends IOCError {
   }
 
   private updateErrorMessage() {
-    const dependencyChainString = this.dependencyChain.reverse().map((d) => d.toString()).join(' -> ');
+    const dependencyChainString = this.dependencyChain.map((d) => d.toString()).reverse().join(' -> ');
     this.message = `Circular dependency found: ${dependencyChainString}`;
   }
 }
@@ -33,7 +33,7 @@ export class ServiceNotDecoratedError extends IOCError {
 
 export class MissingDependencyError extends IOCError {
   constructor(dependencyIdentifier: DependencyIdentifier, indexOfMissingDependency: number) {
-    super(`Error adding depencencies to ${dependencyIdentifier.toString()}. Dependency missing at index ${indexOfMissingDependency}`);
+    super(`Error with '${dependencyIdentifier.toString()}'. Dependency not registered at index ${indexOfMissingDependency}`);
   }
 }
 
