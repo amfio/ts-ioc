@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
+    "build-examples": "tsc -p examples",
     "build": "tsc",
     "test": "mocha -r ts-node/register src/**/*.spec.ts",
     "lint": "tslint -c tslint.json -p tsconfig.json"
