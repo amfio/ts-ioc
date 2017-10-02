@@ -19,8 +19,7 @@ export class IOCContainer {
       return new service(...dependencies);
     };
 
-    // So we can better handle errors by knowing how many dependencies the service
-    // should have
+    // So we can better handle errors by knowing how many dependencies the service should have
     Object.defineProperty(factory, 'length', { value: service.length });
 
     const wrappedDependency = new WrappedFactory(serviceIdentifier, factory, options, this);

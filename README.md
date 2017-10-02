@@ -1,8 +1,8 @@
 # TS IOC
-## Installation
-Until I get around to publishing it to NPM, you can install TS-IOC using the following command:
+A lightweight IOC Container written in TypeScript
 
-`npm i git@github.com:amfio/ts-ioc.git` 
+## Installation
+`npm i ts-ioc` 
 
 ## Documentation
 ### Registering a service
