@@ -159,34 +159,34 @@ describe('decorators', () => {
 
     describe('multiple containers', () => {
       let container1: IOCContainer;
-      let inject1: InjectDecorator;
-      let service1: ServiceDecorator;
+      let injectDecorator1: InjectDecorator;
+      let serviceDecorator1: ServiceDecorator;
       let container2: IOCContainer;
-      let inject2: InjectDecorator;
-      let service2: ServiceDecorator;
+      let injectDecorator2: InjectDecorator;
+      let serviceDecorator2: ServiceDecorator;
 
       beforeEach(() => {
         container1 = new IOCContainer();
         const decorators1 = createDecoratorsForContainer(container1);
-        inject1 = decorators1.inject;
-        service1 = decorators1.service;
+        injectDecorator1 = decorators1.inject;
+        serviceDecorator1 = decorators1.service;
 
         container2 = new IOCContainer();
         const decorators2 = createDecoratorsForContainer(container2);
-        inject2 = decorators2.inject;
-        service2 = decorators2.service;
+        injectDecorator2 = decorators2.inject;
+        serviceDecorator2 = decorators2.service;
       });
 
       it('should allow you to register services to each container without them being accessible from the other container', () => {
         const SERVICE_A = Symbol('ServiceA');
         const SERVICE_B = Symbol('ServiceB');
 
-        @service1(SERVICE_A)
+        @serviceDecorator1(SERVICE_A)
         class ServiceA {
           public getHello = () => 'Hello';
         }
 
-        @service2(SERVICE_B)
+        @serviceDecorator2(SERVICE_B)
         class ServiceB {
           public getHello = () => 'Hello';
         }

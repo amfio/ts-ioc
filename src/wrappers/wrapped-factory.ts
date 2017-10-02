@@ -1,20 +1,18 @@
-import { CircularDependencyError } from './../errors';
+import { CircularDependencyError, MissingDependencyError, AddDependencyError } from './../errors';
 import { IOCContainer } from './../container';
 
 export class WrappedFactory<T> implements WrappedDependency<T> {
-  private name: string;
   private instance: T;
   private isBeingInstantiated = false;
 
-  private dependencies = new Array<Symbol>();
+  private dependencies = new Array<DependencyIdentifier>();
 
   constructor(
-    symbol: Symbol,
+    private identifier: DependencyIdentifier,
     private factoryFunction: Factory<T>,
     private options: DependencyOptions,
     private container: IOCContainer
   ) {
-    this.name = symbol.toString();
   }
 
   public getInstance(): T {
@@ -25,7 +23,7 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
     // if we are already in the process of instanciating this dependency then we must
     // be in the middle of a circular dependency
     if (this.isBeingInstantiated) {
-      throw new CircularDependencyError(this.name);
+      throw new CircularDependencyError(this.identifier.toString());
     }
 
     const instance = this.createInstance();
@@ -37,21 +35,22 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
     return instance;
   }
 
-  public addDependencies(...dependenciesNames: Array<Symbol>) {
+  public addDependencies(...dependenciesNames: Array<DependencyIdentifier>) {
     this.dependencies = dependenciesNames;
     this.ensureCorrectNumberOfDependencies();
   }
 
-  public addDependency(dependencyName: Symbol, paramIndex: number) {
+  public addDependency(dependencyIdentifier: DependencyIdentifier, paramIndex: number) {
+    // TODO: Remove this? It would allow overriding of dependencies
     if (this.dependencies[(paramIndex)]) {
-      throw new Error(`Error adding dependency ${dependencyName.toString()} to ${this.name} at position ${paramIndex}. Dependency at that position exists already.`);
+      throw new AddDependencyError(this.identifier, dependencyIdentifier, paramIndex, 'Dependency at that position already exists');
     }
 
     if (paramIndex >= this.factoryFunction.length) {
-      throw new Error(`Error adding dependency ${dependencyName.toString()} to ${this.name} at position ${paramIndex}. Service only has ${this.factoryFunction.length} dependencies.`);
+      throw new AddDependencyError(this.identifier, dependencyIdentifier, paramIndex, `Service only has ${this.factoryFunction.length} dependencies`);
     }
 
-    this.dependencies[paramIndex] = dependencyName;
+    this.dependencies[paramIndex] = dependencyIdentifier;
 
     return this;
   }
@@ -72,7 +71,7 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
   private ensureCorrectNumberOfDependencies() {
     const indexOfMissingDependency = this.locateIndexOfMissingDependency();
     if (indexOfMissingDependency !== -1) {
-      throw new Error(`Error adding depencencies to ${this.name}. Dependency missing at index ${indexOfMissingDependency}. ${this.factoryFunction.length} required`);
+      throw new MissingDependencyError(this.identifier, indexOfMissingDependency);
     }
   }
 
@@ -86,7 +85,7 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
       newInstance = this.factoryFunction(...this.getDependencies());
     } catch (error) {
       if (error instanceof CircularDependencyError) {
-        error.addDependencyToChain(this.name);
+        error.addDependencyToChain(this.identifier);
       }
 
       throw error;
@@ -98,12 +97,12 @@ export class WrappedFactory<T> implements WrappedDependency<T> {
   }
 
   private getDependencies() {
-    return this.dependencies.map((dependencyName, index) => {
-      if (!dependencyName) {
-        throw new Error(`Error getting dependencies for ${this.name}. No dependecy at position ${index} is specified`);
+    return this.dependencies.map((dependencyIdentifier, index) => {
+      if (!dependencyIdentifier) {
+        throw new MissingDependencyError(this.identifier, index);
       }
 
-      return this.container.get(dependencyName);
+      return this.container.get(dependencyIdentifier);
     });
   }
 }

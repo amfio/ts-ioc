@@ -10,3 +10,5 @@ declare interface WrappedDependency<T> {
 
 declare type Factory<T> = (...dependencies: Array<Dependency>) => T;
 declare type Service<T> = new (...dependencies: Array<Dependency>) => T;
+
+declare type DependencyIdentifier = Symbol | string;

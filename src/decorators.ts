@@ -1,32 +1,31 @@
 import { container as defaultContainer, IOCContainer } from './container';
+import { ServiceNotDecoratedError } from './errors';
 
-// Implementing decorators is new to me. These are more of an experiment out of interest
-
-export type ServiceDecorator = (dependencyName: Symbol, dependencyOptions?: DependencyOptions) => Function;
-export type InjectDecorator = (dependencyName: Symbol) => Function;
+export type ServiceDecorator = (dependencyIdentifier: DependencyIdentifier, dependencyOptions?: DependencyOptions) => Function;
+export type InjectDecorator = (dependencyIdentifier: DependencyIdentifier) => Function;
 
 export function createDecoratorsForContainer(container: IOCContainer): { service: ServiceDecorator, inject: InjectDecorator } {
-  let currentServiceSymbol: Symbol;
+  let currentServiceIdentifier: DependencyIdentifier;
   let currentService: Service<any>;
-  let dependenciesWaitingToBeInjected: Array<Symbol>;
+  let dependenciesWaitingToBeInjected: Array<DependencyIdentifier>;
   resetInjections();
 
   function resetInjections() {
-    currentServiceSymbol = null;
+    currentServiceIdentifier = null;
     currentService = null;
-    dependenciesWaitingToBeInjected = new Array<Symbol>();
+    dependenciesWaitingToBeInjected = new Array<DependencyIdentifier>();
   }
 
-  function serviceDecorator(dependencyName: Symbol, dependencyOptions: DependencyOptions = { isSingleton: true }) {
+  function serviceDecorator(dependencyIdentifier: DependencyIdentifier, dependencyOptions: DependencyOptions = { isSingleton: true }) {
     return function(targettedService: Service<any>) {
 
       if (currentService !== null && currentService !== targettedService) {
         resetInjections();
-        throw Error(`Injecting dependencies into ${currentServiceSymbol} but it is not decorated with @service`);
+        throw new ServiceNotDecoratedError(currentServiceIdentifier);
       }
 
       try {
-        container.registerService(dependencyName, targettedService, dependencyOptions).addDependencies(...dependenciesWaitingToBeInjected);
+        container.registerService(dependencyIdentifier, targettedService, dependencyOptions).addDependencies(...dependenciesWaitingToBeInjected);
       } catch (e) {
         throw e;
       } finally {
@@ -35,15 +34,15 @@ export function createDecoratorsForContainer(container: IOCContainer): { service
     };
   }
 
-  function injectDecorator(dependencyName: Symbol) {
+  function injectDecorator(dependencyIdentifier: DependencyIdentifier) {
     return function (targettedService: Service<any>, propertyKey: string | symbol, parameterIndex: number) {
       if (currentService !== null && currentService !== targettedService) {
         resetInjections();
-        throw Error(`Injecting occured on multiple different targets. Make sure you have decorated ${currentServiceSymbol} with @service`);
+        throw new ServiceNotDecoratedError(currentServiceIdentifier);
       }
-      currentServiceSymbol = dependencyName;
+      currentServiceIdentifier = dependencyIdentifier;
       currentService = targettedService;
-      dependenciesWaitingToBeInjected[parameterIndex] = dependencyName;
+      dependenciesWaitingToBeInjected[parameterIndex] = dependencyIdentifier;
     };
   }
 

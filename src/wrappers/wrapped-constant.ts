@@ -1,6 +1,6 @@
 export class WrappedConstant<T> implements WrappedDependency<T> {
   constructor(
-    private name: Symbol,
+    private identifer: DependencyIdentifier,
     private instance: T
   ) {}
 
