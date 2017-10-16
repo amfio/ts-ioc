@@ -2,7 +2,7 @@
   "name": "ts-ioc",
   "author": "Alexander Field",
   "keywords": ["ioc", "inversion", "control", "dependency", "injection", "container", "typescript", "ts"],
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "dist/index.js",
   "files": ["dist"],
   "scripts": {
