@@ -1,6 +1,7 @@
 {
   "name": "ts-ioc",
   "author": "Alexander Field",
+  "keywords": ["ioc", "inversion of control", "container", "typescript", "ts"],
   "version": "0.1.1",
   "main": "dist/index.js",
   "files": ["dist"],
